@@ -1,0 +1,12 @@
+[project]
+name="satellite_satellite_near_coincidence_solver"
+description = "Python package for identifying near-coincidences between satellite ground tracks based on TLE propogation"
+authors = [{name="Andrew Martin"}]
+readme="README.md"
+license = {file = "LICENSE"} # placeholder
+requires-python = ">=3.10" # placeholder
+dependencies = [] # placeholder
+dynamic=["version"]
+
+[tool.setuptools.packages]
+find = {}
