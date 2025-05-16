@@ -1,8 +1,11 @@
 """Class definition for handling multiple TLEs with different epochs, and generating positions, etc, across large timescales"""
 
 from skyfield.api import EarthSatellite, Timescale, wgs84
+from typing import Self
 import datetime as dt
 import numpy as np
+import os
+import json
 
 class MultiTLE:
     def __init__(self, tles: list[EarthSatellite]):
@@ -48,3 +51,22 @@ class MultiTLE:
         ])
         return lons, lats
 
+
+    @classmethod
+    def from_json_file(cls, fpath: str, ts: Timescale) -> Self:
+        assert os.path.isfile(fpath), f"{fpath=} is not a valid file"
+        with open(fpath, "r") as f:
+            omm_json = json.load(f)
+
+        if isinstance(omm_json, dict):
+            tles = [EarthSatellite.from_omm(ts=ts, element_dict=omm_json)]
+        elif isinstance(omm_json, list):
+            tles = [
+                EarthSatellite.from_omm(ts=ts, element_dict=omm)
+                for omm in omm_json
+            ]
+        else:
+            raise ValueError(omm_json)
+
+        return cls(tles)
+        
