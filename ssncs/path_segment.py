@@ -1,5 +1,6 @@
 """Script containing class definitions for PathSegment class which defines motions in a 2d coordinate system, and contains methods for determining intersection"""
 
+from __future__ import annotations
 from functools import cached_property
 from dataclasses import dataclass
 from typing import Self
