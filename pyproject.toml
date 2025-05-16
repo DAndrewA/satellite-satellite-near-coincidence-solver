@@ -1,12 +1,16 @@
 [project]
-name="satellite_satellite_near_coincidence_solver"
+name="ssncs"
 description = "Python package for identifying near-coincidences between satellite ground tracks based on TLE propogation"
 authors = [{name="Andrew Martin"}]
 readme="README.md"
-license = {file = "LICENSE"} # placeholder
+#license = "placeholder" # placeholder
 requires-python = ">=3.10" # placeholder
 dependencies = [] # placeholder
 dynamic=["version"]
 
-[tool.setuptools.packages]
-find = {}
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["ssncs"]
