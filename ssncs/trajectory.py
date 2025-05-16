@@ -9,7 +9,7 @@ import pandas as pd
 from typing import Any
 
 
-def get_datetimes(start: dt.datetime, end: dt.datetime, ts: Timescale, freq: str="60s") -> Time:
+def get_datetimes(start: dt.datetime, end: dt.datetime, freq: str="60s") -> Time:
     """Function taking a start and end utc datetime, and create a set of datetimes with fixed frequency, and convert to a skyfield Time array"""
     datetimes = pd.date_range(
         start=start,
@@ -17,7 +17,7 @@ def get_datetimes(start: dt.datetime, end: dt.datetime, ts: Timescale, freq: str
         freq=freq,
         tz=dt.timezone.utc,
     ).to_pydatetime()
-    return ts.from_datetimes(datetimes)
+    return datetimes#ts.from_datetimes(datetimes)
 
 def propogate_satellite(satellite: EarthSatellite, times: Time) -> EarthSatellite:
     return satellite.at(times)

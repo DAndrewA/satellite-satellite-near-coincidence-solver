@@ -1,0 +1,50 @@
+"""Class definition for handling multiple TLEs with different epochs, and generating positions, etc, across large timescales"""
+
+from skyfield.api import EarthSatellite, Timescale, wgs84
+import datetime as dt
+import numpy as np
+
+class MultiTLE:
+    def __init__(self, tles: list[EarthSatellite]):
+        for i, es in tles.items():
+            assert isinstance(es, EarthSatellite), f"type(tles[{i}])={type(es)} should be an instance of EarthSatellite."
+
+        epochs = np.array([
+            dt.datetime.fromisoformat(es.epoch).replace(tzinfo=dt.timezone.utc)
+            for es in tles
+        ])
+        self.tles = tles
+
+
+    def propogate_to_datetimes(self, datetimes: np.ndarray, ts: Timescale):
+        optimum_tle_for_datetime = np.argmin(
+            np.abs( np.expand_dims(datetimes, -1) - self.epochs ),
+            axis=-1
+        )
+        datetimes_for_tle = [
+            datetimes[optimum_tle_for_datetime == i]
+            for i in range(len(self.epochs))
+        ]
+        
+        subpoints_at_datetimes = [
+            wgs84.subpoint_of(
+                es.at(ts.from_datetimes(dts_for_tle))
+            )
+            for es, dts_for_tle in zip(self.tles, datetimes_for_tle)
+        ]
+
+        return subpoints_at_datetimes
+
+    def get_lon_lat_at_datetimes(self, datetimes: np.ndarray, ts:Timescale):
+        subpoints_at_datetimes = self.propogate_to_datetimes(datetimes, ts)
+
+        lons = np.concat([
+            subpoint.longitude.degrees
+            for subpoint in subpoints_at_datetimes
+        ])
+        lats = np.concat([
+            subpoint.latitude.degrees
+            for subpoint in subpoints_at_datetimes
+        ])
+        return lons, lats
+
