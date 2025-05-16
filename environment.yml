@@ -1,0 +1,16 @@
+name: ssncs
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - skyfield
+  - matplotlib
+  - ipykernel
+  - sgp4=2.24
+  - pandas
+  - ca-certificates
+  - certifi
+  - openssl
+  - cmcrameri
+  - cartopy
+prefix: /home/users/eeasm/mambaforge-pypy3/envs/ssncs
