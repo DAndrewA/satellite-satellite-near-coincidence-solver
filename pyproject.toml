@@ -12,5 +12,8 @@ dynamic=["version"]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["ssncs"]
+[tool.setuptools]
+packages = ["ssncs"]
+
+#[tool.setuptools.packages.find]
+#where = ["."]

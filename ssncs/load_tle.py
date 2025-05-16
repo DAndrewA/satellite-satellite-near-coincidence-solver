@@ -1,6 +1,6 @@
 """Module allowing the loading of TLE files or OMM files to create mutliple skyfield.sgp4lib.EarthSatellite instances"""
 
-import skyfield.api import EarthSatellite
+from skyfield.api import EarthSatellite
 from skyfield.timelib import Timescale
 from typing import Any
 import os
