@@ -9,14 +9,16 @@ import json
 
 class MultiTLE:
     def __init__(self, tles: list[EarthSatellite]):
-        for i, es in tles.items():
+        for es in tles:
             assert isinstance(es, EarthSatellite), f"type(tles[{i}])={type(es)} should be an instance of EarthSatellite."
 
         epochs = np.array([
-            dt.datetime.fromisoformat(es.epoch).replace(tzinfo=dt.timezone.utc)
+            #dt.datetime.fromisoformat(es.epoch).replace(tzinfo=dt.timezone.utc)
+            es.epoch.astimezone(dt.timezone.utc)
             for es in tles
         ])
         self.tles = tles
+        self.epochs = epochs
 
 
     def propogate_to_datetimes(self, datetimes: np.ndarray, ts: Timescale):
@@ -29,17 +31,19 @@ class MultiTLE:
             for i in range(len(self.epochs))
         ]
         
-        subpoints_at_datetimes = [
-            wgs84.subpoint_of(
-                es.at(ts.from_datetimes(dts_for_tle))
-            )
+        positions_at_datetimes = [
+            es.at(ts.from_datetimes(dts_for_tle))
             for es, dts_for_tle in zip(self.tles, datetimes_for_tle)
         ]
 
-        return subpoints_at_datetimes
+        return positions_at_datetimes
 
     def get_lon_lat_at_datetimes(self, datetimes: np.ndarray, ts:Timescale):
-        subpoints_at_datetimes = self.propogate_to_datetimes(datetimes, ts)
+        positions_at_datetimes = self.propogate_to_datetimes(datetimes, ts)
+        subpoints_at_datetimes = {
+            wgs84.subpoint_of(positions)
+            for positions in positions_at_datetimes
+        }
 
         lons = np.concat([
             subpoint.longitude.degrees
