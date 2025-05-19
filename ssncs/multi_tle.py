@@ -56,6 +56,41 @@ class MultiTLE:
         return lons, lats
 
 
+    def get_lon_lat_at_datetimes_with_lerp(self, datetimes: np.ndarray, ts: Timescale):
+        # perform lerp between epochs to obtain weightings of each datetime
+        datetimeranges = []
+        for epoch_before, epoch_after in zip(
+            [None, *self.epochs[:-1]],
+            [*self.epochs[1:], None]
+        ):
+            datetimeranges.append(
+                DateTimeRange(start=epoch_before, end=epoch_after)
+            )
+
+        lerp_contributions_by_epoch = np.array([
+            [
+                np.minimum(
+                    np.clip( (datetimes - dtr.start) / (epoch - dtr.start) , 0, 1 ),
+                    np.clip( (datetimes - dtr.end) / (epoch - dtr.end) , 0, 1)
+                )
+            ]
+            for epoch, dtr in zip(self.epochs, datetimeranges)
+        ])
+
+        # get all positions from all epochs for all datetimes
+        # SLOW, but easy to implement
+        positions_by_epoch = [
+            wgs84.subpoint_of(es.at(ts.from_datetimes(datetimes)))
+            for es in self.tles
+        ]
+        lons_lats_by_epoch = [
+            np.stack( pos.longitude.degrees, pos.latitude.degrees, -1 )
+            for pos in positions_by_epoch
+        ]
+        positions = _get_mean_vector_on_sphere(lons_lats_by_epoch, axis=0, weights=lerp_contributions_by_epoch)
+        return positions
+
+
     @classmethod
     def from_json_file(cls, fpath: str, ts: Timescale) -> Self:
         assert os.path.isfile(fpath), f"{fpath=} is not a valid file"
@@ -74,3 +109,42 @@ class MultiTLE:
 
         return cls(tles)
         
+
+def _get_mean_vector_on_sphere(lons_lats_by_epoch, axis: int = 0, weights: np.ndarray = 1):
+    lons_lats_rad = np.deg2rad(lons_lats_by_epoch)
+
+    mx = np.sum( np.cos(lons_lats_rad[...,0])*np.cos(lons_lats[...,1])* weights, axis=axis ) / np.sum(weights, axis=axis)
+    my = np.sum( np.sin(lons_lats_rad[...,0])*np.cos(lons_lats[...,1])* weights, axis=axis ) / np.sum(weights, axis=axis)
+    mz = np.sum( np.sin(lons_lats_rad[...,1])*weights, axis=axis ) / np.sum(weights, axis=axis)
+    norm = np.linalg.norm([mx,my,mx])
+    mx /= norm
+    my /= norm
+    mz /= norm
+
+    mlats_rad = np.arcsin(mz)
+    mlons_rad = np.arctan2(my, mz)
+    return np.rad2deg(mlons_rad), np.rad2deg(mlats_rad)
+
+
+
+class DateTimeRange:
+    def __init__(self, start: dt.datetime, end: dt.datetime, end_inclusive: bool = True):
+        assert isinstance(self.start, dt.datetime, None)
+        assert isinstance(self.end, dt.datetime, None)
+        self.start = start
+        self.end = end
+        seld.end_inclusive = end_inclusive
+
+    def __contains__(self, other: dt.datetime):
+        cond_start = True
+        if self.start is not None:
+            cond_start = (other >= self.start)
+
+        cond_end = True
+        if self.end is not None:
+            if self.end_inclusive:
+                cond_end = (other <= self.end)
+            else:
+                cond_end = (other < self.end) 
+
+        return cond_start & cond_end

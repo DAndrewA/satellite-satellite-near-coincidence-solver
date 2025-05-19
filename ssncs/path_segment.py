@@ -4,18 +4,19 @@ from __future__ import annotations
 from functools import cached_property
 from dataclasses import dataclass, asdict
 import datetime as dt
-from typing import Self
+from typing import Self, Any
 import numpy as np
 import cartopy.crs as ccrs
 
 class PathSegment:
-    def __init__(self, start, end, crs: ccrs.CRS):
+    def __init__(self, start, end, crs: ccrs.CRS, meta: Any = None):
         assert start.shape == (2,), f"{start.shape=} should be (2,)"
         assert end.shape == (2,), f"{end.shape=} should be (2,)"
         assert isinstance(crs, ccrs.CRS), f"{type(crs)=} should be a subclass of CRS"
         self.start = start
         self.end = end
         self.crs = crs
+        self.meta = meta
 
     @classmethod
     def from_xy_arrays(cls, x, y) -> list[Self]:
@@ -60,12 +61,14 @@ class PathSegment:
     def transform_crs(self, new_crs:ccrs.CRS) -> Self:
         new_start = np.array(new_crs.transform_point(self.start[0], self.start[1], self.crs))
         new_end = np.array(new_crs.transform_point(self.end[0], self.end[1], self.crs))
-        return type(self)(start=new_start, end=new_end, crs=new_crs)
+        return type(self)(start=new_start, end=new_end, crs=new_crs, meta=self.meta)
 
     def to_dict(self) -> dict:
         return dict(
             start = self.start,
-            end = self.end
+            end = self.end,
+            crs = self.crs,
+            meta = self.meta,
         )
 
 
@@ -78,3 +81,13 @@ class Intersection:
         self.ps2 = ps2
         selt.dt1 = dt1
         self.dt2 = dt2
+
+    @classmethod
+    def from_intersecting_path_segments(cls, ps1: PathSegment, ps2: PathSegment) -> Self:
+        assert isinstance(ps1, PathSegment), f"{type(ps1)=} should be instance of PathSegment"
+        assert isinstance(ps2, PathSegment), f"{type(ps2)=} should be instance of PathSegment"
+        dt1, dt2 = None, None
+        if isinstance(ps1.meta, dt.datetime): dt1 = ps1.meta
+        if isinstance(ps2.meta, dt.datetime): dt2 = ps2.meta
+
+        return cls(ps1=ps1, ps2=ps2, dt1 = dt1, dt2=dt2)
