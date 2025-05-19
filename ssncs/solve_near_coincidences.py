@@ -36,8 +36,8 @@ def get_datetimes(start: dt.datetime, end: dt.datetime, freq: dt.timedelta = dt.
 def solve_near_coincidences(sat_1: MultiTLE, sat_2: MultiTLE, start: dt.datetime, end:dt.datetime, ts: Timescale):
     datetimes = get_datetimes(start, end, freq="60s")
 
-    xy1 = np.concat( sat_1.get_lon_lat_at_datetimes(datetimes, ts), axis=1)
-    xy2 = np.concat( sat_2.get_lon_lat_at_datetimes(datetimes, ts), axis=1)
+    xy1 = np.stack( sat_1.get_lon_lat_at_datetimes(datetimes, ts), axis=1)
+    xy2 = np.stack( sat_2.get_lon_lat_at_datetimes(datetimes, ts), axis=1)
 
     N_halfwidth = int(tau/freq) + 1
     N = 2*N + 1
